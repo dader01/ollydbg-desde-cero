@@ -1,0 +1,12 @@
+Para realizar este tute se debe utilizar el ollydbg parcheado 4 que esta  
+dentro del rar actual,es un OLLYDBG parcheado que se debe colocar en la  
+misma carpeta que el OLLYDBG.exe,  porque el OLLYDBG normal tiene un bug  
+al manejar las ILLEGAL INSTRUCTION que hace que salga un cartel si o si  
+cuando le pones la tilde en debugging options-exceptions para saltearla,  
+con el parcheado 4, el bug esta reparado, al momento de hacer el tute lo  
+habia olvidado, pero Solid me recordo al no poderlo hacerlo al tute, el  
+problema y al pasarle el parcheado 4 para que ponga en la carpeta del  
+OLLYDBG y usarlo, no tiene ningun problema.
+ 
+Ricardo Narvaja
+ 

@@ -1,0 +1,67 @@
+var call
+var tabla
+var api
+var iat
+var programa
+var end
+
+mov programa,401000
+mov iat,460818
+
+start:
+
+findop programa, #FF15??#
+log $RESULT
+
+mov call,$RESULT
+
+cmp call,0
+je final
+cmp call,44904b
+jae final
+
+
+
+sigue:
+
+add call,2
+log call
+
+mov tabla,[call]
+log tabla
+mov api, [tabla]
+log api
+cmp api,50000000
+jb saltar
+
+loop:
+
+cmp api, [iat]
+je solucionar
+add iat,4
+cmp iat,460f28
+jae saltar
+jmp loop
+
+
+solucionar:
+log iat
+log call
+mov [call],iat
+
+
+
+cmp call,449068
+jae final
+
+saltar:
+
+sti
+mov eip,4271f7
+mov programa,call
+log programa
+mov iat,460818
+jmp start
+
+final:
+ret

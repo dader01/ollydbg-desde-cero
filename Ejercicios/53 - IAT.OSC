@@ -1,0 +1,103 @@
+/*
+    ###############################################################################################################
+ 
+                                            << CracksLatinoS - 2006 >>
+
+    Script hecho por: Ulaterck.
+ 
+    Descripción: Script realizado para el curso INTRODUCCIÓN AL CRACKING CON OLLYDBG DESDE CERO TOMO 52 
+ 		         por Ricardo Narvaja. La función de este script se lleva a cabo para la PARTE 2: Reparar IAT.
+			     Todo el procedimiento ya ha sido explicado por marciano en su tuto del concurso 97
+			     pero El script funciona de la siguiente Forma:
+			1. Buscamos la Dirección de la función VirtualAlloc, ya que la primera llamada a esta funcion es para crear
+			   la zona donde se encuentra la intruccion " MOV DWORD PTR SS:[ESP +18],EDI
+			   así podremos encontrar la base de esta sección donde empezar a encontrar la instrucción.
+			   Nota: No se si con el comando GMI se podrá sacar la base de una sección creada por el packer.
+			         ya que estube probando pero sin resultados.
+					 
+		    2. Una vez que sabemos donde empezar a buscar la instrucción MOV. Buscamos la dirección de la función VirtualProtect
+			   ya que esta es la que cambia los permisos de la sección de la IAT así que este script pone un bp en esta función
+			   y cada vez que para comprueba si es la sección de la iat a la que le está cambiando el permiso si es así
+			
+			
+			3. Buscamos los opcodes de la intrucción MOV DWORD PTR SS:[ESP +18],EDI más unos mas para más exactitud y al encontrarlos
+			   los nopearemos y ahi termina el scrip al terminar solo presionamos run (F9) en olly y abrimos ImportRec
+			   para arreglar la IAT en el Dumpeado que previamente hemos hecho. y reparado el stolen code.
+			   Datos Importantes:
+			   sección IAT: 00460000
+			   INICIO IAT:  00460818
+			   FINAL IAT :  00460F28
+			   LARGO      : 710
+			   OEP:        460B010  DEPENDIENDO DONDE COPIARON EL STOLEN CODE.
+    Target: UnPackMe_TPPpack.exe
+    Requisitos: ODBGScript 1.48 , HideDebugger 1.24 , HideOD. parados en el Entry Point Ignorar todas las excepciones 
+	            
+ 
+                
+    ###############################################################################################################
+ 
+*/ 
+
+var base
+var dir_VirtualAlloc
+var dir_VirtualProtect
+VAR dir_mov
+Inicio:
+
+gpa "VirtualAlloc", "kernel32.dll"    // Buscamos la dirección de la Funcion VirtualAlloc
+mov dir_VirtualAlloc, $RESULT
+log dir_VirtualAlloc
+
+gpa "VirtualProtect", "kernel32.dll"
+mov dir_VirtualProtect, $RESULT
+
+bp dir_VirtualAlloc
+run
+eob info
+
+info:
+
+mov base, eax
+log base
+bc dir_VirtualAlloc
+bp dir_VirtualProtect
+
+Zona:
+eob seccion
+run
+
+seccion:
+cmp esi, 00460000
+je retornar
+jmp Zona
+
+retornar:
+bc dir_VirtualProtect
+mov Reg_esp, [esp]
+bp Reg_esp
+
+eob zona_1
+run
+
+zona_1:
+bc Reg_esp
+find base, #897C24188B4424#
+mov dir_mov, $RESULT
+log dir_mov
+jmp nopear
+
+nopear:
+bp dir_mov
+eob nopear2
+run
+nopear2:
+bc dir_mov
+fill dir_mov, 4, 90
+
+
+final:
+
+msg "Mov nopeado, al terminar el script presiona run (F9)."
+
+ret
+

@@ -1,0 +1,29 @@
+inicio:
+
+bphws 12ffc4, "r"
+
+trabajo:
+
+eob pirulo
+run
+
+pirulo:
+cmp eip, 7c91eaec
+je quitar
+cmp eip, 7c91eb03
+je restaurar
+jmp final
+
+quitar:
+bphwc 12ffc4
+jmp trabajo
+
+restaurar:
+jmp inicio
+
+final:
+MSGYN "Continuar?"
+cmp $RESULT,1
+je inicio
+ret
+

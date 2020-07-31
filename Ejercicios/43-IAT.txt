@@ -1,0 +1,59 @@
+var aux
+var aux2
+
+inicio:
+
+bphws 4743d5, "x"
+
+trabajo:
+
+eob pirulo
+run
+
+pirulo:
+log eip
+cmp eip, 7c91eaec
+je quitar
+cmp eip, 7c91eb03
+je restaurar
+cmp eip,aux
+je restaurar2
+cmp eip,4743d5
+je reparar
+jmp final
+
+quitar:
+bphwc 4743d5
+jmp trabajo
+
+restaurar:
+mov aux,esp
+mov aux,[aux]
+add aux,0b8
+mov aux,[aux]
+log aux
+bp aux
+jmp inicio
+
+restaurar2:
+bc aux
+jmp inicio
+
+reparar:
+cmp eax, 500000
+ja inicio
+mov aux2, esp
+sub aux2,0c
+mov aux2, [aux2]
+log aux2
+mov [edi],aux2
+jmp inicio
+
+
+
+final:
+MSGYN "Continuar?"
+cmp $RESULT,1
+je inicio
+ret
+

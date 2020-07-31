@@ -1,0 +1,40 @@
+var tabla
+var contenido
+
+
+mov tabla,460818
+
+start:
+cmp tabla,460f28
+ja final
+cmp [tabla],50000000
+ja saltear
+
+
+mov contenido,[tabla]
+cmp contenido,0
+je saltear
+log contenido
+log tabla
+
+mov eip,contenido
+bphws 47691f, "x"
+mov [47691f],0
+mov [476920],0
+cob reparar
+run
+
+reparar:
+cmp eip,7c91e88e
+je saltear
+log eax
+mov [tabla],eax
+run
+
+
+saltear:
+add tabla,4
+jmp start
+
+final:
+ret

@@ -1,0 +1,110 @@
+/*
+    ###############################################################################################################
+ 
+                                            << CracksLatinoS - 2006 >>
+
+    Script hecho por: Ulaterck.
+ 
+    Descripción: Script realizado para el curso INTRODUCCIÓN AL CRACKING CON OLLYDBG DESDE CERO TOMO 52 
+ 		    por Ricardo Narvaja. La función de este script se lleva a cabo para la PARTE 1: Encontrar el 
+                  OEP y reparar el Stolen Code. 
+ 
+    Target: UnPackMe_TPPpack.exe
+    Requisitos: ODBGScript 1.48 , HideDebugger 1.24 , HideOD. parados en el Entry Point destildar todas las
+                casillas de las excepciones menos la de KERNEL32, ya que el método utilizado es el de
+                las excepciones de Ricardo. 
+                - Antes de ejecutar el script anotar la ultima excepcion encontrada y anotarla ya que el script la 
+                  pedirá.
+ 
+                En todo caso ver el MIniTuto.PARTE1.doc
+    ###############################################################################################################
+ 
+*/ 
+ 
+
+var dir_excep
+var Newoep
+var dir_JMP
+ 
+var dir_CALL
+var oep
+var StartScan 
+var Opcodes  
+var temp
+var temp2
+var temp3
+
+Datos:
+mov Newoep, eip				// Guardamos la dirección del EntryPoint.
+						// Anotando la ultima dirección del Script					
+ask "Introduzca la ultima excepción"	// Sacamos la cajita de dialogo para introducir el dato.
+cmp $RESULT,0					// Comparamos si se ha introducino alguna dirección.
+je aviso                                 // Si no nos dirijimos a la etiqueta aviso 
+mov dir_excep, $RESULT			// Si introducimos una dirección la guardamos en dir_excep.
+jmp Inicio					// Saltamos a la etiqueta Inicio para comenzar.
+
+aviso:
+msg "Ejecute de nuevo el script e introduzca una dirección valida."
+jmp final
+
+Inicio:
+run				// Ejecutamos el programa
+eoe verifica			// Si se produce una excepción nos dirijimos a la etiqueta verifica.
+
+
+verifica:
+cmp eip,dir_excep		// una vez que estemos aquí por una excepción comprobamos que sea la ultima.
+je ultima			// Si lo es nos vamos a la etiqueta ultima.
+esto				// Si no ejecuta SHIFT + F9 para pasar la excepción.
+jmp Inicio:			// Y saltamos  a la etiqueta Inicio para buscar otra excepción.
+
+ultima:
+findop eip,#FFE0#		// Al caer aquí por la ultima excepción buscamos el salto JMP EAX al Stolen Code.
+mov dir_JMP,$RESULT		// Una vez encontrado aguardamos la dirección en dir_JMP
+bp dir_JMP			// Ponemos un breakpoint (F2) en el salto JMP EAX.
+esto				// Pasamos la excepción con SHIFT + F9 para caer en el bp.
+bc dir_JMP			// Quitamos el bp del Salto JMP EAX.
+sti				// Ejecuta F7 para caer en el Stolen Code.
+
+mov oep,eip			// Guardamos la dirección del OEP robado.
+mov StartScan,eip		// Guardamos la dirección del oep tambien a StartScan que la usaremos para buscar Calls.
+
+BuscarCall:			// Aqui empezaremos a buscar los calls directos para repararlos para que a la hora de
+				// de hacer binary copy y pegarlos al nuevo oep esos call directos queden bien.
+				// Nota ver MIniTuto.PARTE1.doc
+ 
+ findop StartScan,#E8#	// Buscamos los calls directos que comienzan con su opcode E8	
+ cmp $RESULT, 0		// Cuando no encuentre mas $RESULT valdrá 0 y saltamos al final del script.
+ je final
+ mov dir_CALL, $RESULT	// Guardamos la dirección del primer call encontrado.
+ mov StartScan, $RESULT	// Actualizamos desde donde queremos seguir buscando calls en este caso desde el primer call encontrado.
+ add dir_CALL,1		// A la dirección del call entrontrado le sumamos 1 esto para no tomar el OPCODE E8.
+ mov Opcodes, [dir_CALL]	// Movemos los opcodes de esa dirección a OPcodes.
+ add Opcodes,StartScan	// A esos Opcodes le Sumados la Dirección del Call.		
+ add Opcodes,5		// Al resultado le sumamos 5 y obtenemos la dirección que apunta el call.
+				// Nota ver MIniTuto.PARTE1.doc para aclarar.
+ 
+ 
+// Ahora le asignaremos un nuevo opcode a este call encontrado para que a la hora de hacer bynary paste en el nuevo 
+// oep ese call quede arreglado.
+
+mov temp, StartScan        // Movemos la dirección que contiene StartScan a un temporal. ( StartScan = Dirección del call encontrado.)
+sub temp, oep		      // A la dirección de ese call a reparar le restamos la dirección del oep del stolen code.	
+mov temp2, Newoep	      // Movemos la direccion del nuevo oep que es el EntryPoint a un temporal2.	
+add temp,temp2	      // A ese temporal2 le sumamos el temporar1.
+sub Opcodes, temp		//Ahora la dirección a la que apunta el CAll le restamos la operación anterior
+sub Opcodes, 5		// y a lo que quedó le sumamos 5 y obtenemos los opcodes nuevos para ese call a reparar.
+
+
+Editar:			// Empezaremos a Editar el call con esos nuevos opcodes.
+mov temp3, StartScan		// Movemos la dirección del call a reparar contenida en StartScan a un tercer temporal.	
+add temp3,1			// A la direccion del call le sumamos 1 para no tamar en cuanta el opcode E8.
+mov [temp3], Opcodes		// Reparamos el call con los nuevos OPcodes.
+jmp BuscarCall
+ 
+final: 
+ret
+
+		
+
+
